@@ -49,7 +49,12 @@ def get_token():
         default="https://gitlab.com/")
 def gitlab(private_token, url):
     "Play with gitlab"
-    config.gitlab = GitlabConfig(url, private_token or get_token())
+    private_token = (
+        private_token
+        or
+        get_token()
+    )
+    config.gitlab = GitlabConfig(url, private_token)
 
 
 def walk_subgroups(group):
@@ -151,7 +156,6 @@ def ipython():
     "Run an interactive python to play with gitlab"
     g = config.gitlab
     api = g.api
-    g = api.groups.get(4109197)
     import IPython
     dict_ = globals()
     dict_.update(locals())
