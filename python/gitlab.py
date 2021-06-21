@@ -99,6 +99,10 @@ def group(group_id):
     config.gitlab.group = GitlabGroupConfig(group_id)
 
 
+def sort_members(members):
+    return sorted(members, key=lambda member: member.name)
+
+
 @group.command()
 @table_format(default='key_value')
 @table_fields(choices=["id", "name"])
@@ -107,7 +111,7 @@ def walk_members(fields, format, only_explicit):
     """Recursively walk through all the projects showing the members per group"""
     for project in config.gitlab.group.walk_group_and_projects():
         print(f"## Project: {project.id}: {project.name}")
-        explicit_members = list(project.members.list(as_list=False))
+        explicit_members = sort_members(list(project.members.list(as_list=False)))
         if explicit_members:
             print("### Explicit members")
             with TablePrinter(fields, format) as tp:
@@ -118,7 +122,9 @@ def walk_members(fields, format, only_explicit):
         if not only_explicit:
             print("### Implicit members")
             with TablePrinter(fields, format) as tp:
-                for user in project.members.all(all=True, as_list=False):
+                for user in sort_members(
+                        project.members.all(all=True, as_list=False)
+                ):
                     tp.echo(user.id, user.name)
 
 
