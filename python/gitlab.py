@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import json
+from collections import defaultdict
 
 import click
 
@@ -20,6 +21,7 @@ from click_project.lib import (
     TablePrinter,
     call,
     get_keyring,
+    Spinner,
 )
 from click_project.config import config
 from click_project.log import get_logger
@@ -126,6 +128,29 @@ def walk_members(fields, format, only_explicit):
                         project.members.all(all=True, as_list=False)
                 ):
                     tp.echo(user.id, user.name)
+
+
+@group.command()
+@table_format(default='key_value')
+@table_fields(choices=["name", "members_web_url"])
+def walk_project_per_member(fields, format):
+    """Like walk_members, but focus on the members
+
+For each member, show the groups that explicitly contain that member.
+
+This might take a long time, as we need to first span the whole tree of
+groups/project to have the full list of members.
+    """
+    project_per_member = defaultdict(list)
+    with Spinner():
+        for project in config.gitlab.group.walk_group_and_projects():
+            for member in project.members.list(as_list=False):
+                project_per_member[f"{member.name} ({member.username})"].append(project)
+    for username, groups in sorted(project_per_member.items()):
+        print(f"{username}")
+        for group in sorted(groups, key=lambda group: group.name):
+            with TablePrinter(fields, format) as tp:
+                tp.echo("  " + group.name, group.web_url + "/-/group_members")
 
 
 @group.command()
