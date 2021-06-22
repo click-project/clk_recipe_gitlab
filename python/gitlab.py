@@ -142,6 +142,10 @@ This might take a long time, as we need to first span the whole tree of
 groups/project to have the full list of members.
     """
     project_per_member = defaultdict(list)
+    LOGGER.info(
+        "This may take a few minutes, as we scan the whole tree of groups"
+        " to gather all the members. Please be patient."
+    )
     with Spinner():
         for project in config.gitlab.group.walk_group_and_projects():
             for member in project.members.list(as_list=False):
