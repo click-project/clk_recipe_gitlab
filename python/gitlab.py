@@ -46,15 +46,26 @@ def get_token():
 @group()
 @option("--private-token",
         help="The token to provide to the gitlab API")
+@flag("--ask-token/--no-ask-token",
+      help="Whether the token should be asked if not automatically guessed",
+      default=True)
 @option("--url",
         help="The url to connect to the gitlab API",
         default="https://gitlab.com/")
-def gitlab(private_token, url):
+def gitlab(private_token, url, ask_token):
     "Play with gitlab"
     private_token = (
         private_token
         or
         get_token()
+        or
+        (
+            ask_token
+            and
+            click.prompt("token", hide_input=True, default="", show_default=False)
+        )
+        or
+        None
     )
     config.gitlab = GitlabConfig(url, private_token)
 
