@@ -28,7 +28,6 @@ from click_project.log import get_logger
 from click_project.types import DynamicChoice
 from gitlab import Gitlab
 
-
 LOGGER = get_logger(__name__)
 
 
@@ -44,29 +43,13 @@ def get_token():
 
 
 @group()
-@option("--private-token",
-        help="The token to provide to the gitlab API")
-@flag("--ask-token/--no-ask-token",
-      help="Whether the token should be asked if not automatically guessed",
-      default=True)
-@option("--url",
-        help="The url to connect to the gitlab API",
-        default="https://gitlab.com/")
+@option("--private-token", help="The token to provide to the gitlab API")
+@flag("--ask-token/--no-ask-token", help="Whether the token should be asked if not automatically guessed", default=True)
+@option("--url", help="The url to connect to the gitlab API", default="https://gitlab.com/")
 def gitlab(private_token, url, ask_token):
     "Play with gitlab"
-    private_token = (
-        private_token
-        or
-        get_token()
-        or
-        (
-            ask_token
-            and
-            click.prompt("token", hide_input=True, default="", show_default=False)
-        )
-        or
-        None
-    )
+    private_token = (private_token or get_token()
+                     or (ask_token and click.prompt("token", hide_input=True, default="", show_default=False)) or None)
     config.gitlab = GitlabConfig(url, private_token)
 
 
@@ -106,9 +89,7 @@ class GitlabGroupConfig:
 def group(group_id):
     """Manipulate the given group"""
     if group_id is None:
-        raise click.UsageError(
-            "You must provide a group id, run the groups command to find one"
-        )
+        raise click.UsageError("You must provide a group id, run the groups command to find one")
     config.gitlab.group = GitlabGroupConfig(group_id)
 
 
@@ -135,9 +116,7 @@ def walk_members(fields, format, only_explicit):
         if not only_explicit:
             print("### Implicit members")
             with TablePrinter(fields, format) as tp:
-                for user in sort_members(
-                        project.members.all(all=True, as_list=False)
-                ):
+                for user in sort_members(project.members.all(all=True, as_list=False)):
                     tp.echo(user.id, user.name)
 
 
@@ -153,10 +132,8 @@ This might take a long time, as we need to first span the whole tree of
 groups/project to have the full list of members.
     """
     project_per_member = defaultdict(list)
-    LOGGER.info(
-        "This may take a few minutes, as we scan the whole tree of groups"
-        " to gather all the members. Please be patient."
-    )
+    LOGGER.info("This may take a few minutes, as we scan the whole tree of groups"
+                " to gather all the members. Please be patient.")
     with Spinner():
         for project in config.gitlab.group.walk_group_and_projects():
             for member in project.members.list(as_list=False):
