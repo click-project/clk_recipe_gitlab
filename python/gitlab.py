@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import click
 
-from click_project.decorators import (
+from clk.decorators import (
     argument,
     flag,
     option,
@@ -17,15 +17,15 @@ from click_project.decorators import (
     table_format,
     table_fields,
 )
-from click_project.lib import (
+from clk.lib import (
     TablePrinter,
     call,
     get_keyring,
     Spinner,
 )
-from click_project.config import config
-from click_project.log import get_logger
-from click_project.types import DynamicChoice
+from clk.config import config
+from clk.log import get_logger
+from clk.types import DynamicChoice
 from gitlab import Gitlab
 
 LOGGER = get_logger(__name__)
