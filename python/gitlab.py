@@ -1,31 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-from pathlib import Path
 import json
 from collections import defaultdict
+from pathlib import Path
+from textwrap import indent
 
 import click
-
-from clk.decorators import (
-    argument,
-    flag,
-    option,
-    command,
-    group,
-    use_settings,
-    table_format,
-    table_fields,
-)
-from clk.lib import (
-    TablePrinter,
-    call,
-    get_keyring,
-    Spinner,
-)
 from clk.config import config
+from clk.decorators import (argument, command, flag, group, option,
+                            table_fields, table_format, use_settings)
+from clk.lib import Spinner, TablePrinter, call, get_keyring
 from clk.log import get_logger
 from clk.types import DynamicChoice
+
 from gitlab import Gitlab
 
 LOGGER = get_logger(__name__)
@@ -172,6 +160,26 @@ def groups(format, fields):
     with TablePrinter(fields, format) as tp:
         for group in config.gitlab.api.groups.list(as_list=False):
             tp.echo(group.id, group.name)
+
+
+@gitlab.group()
+@option("--project-id", help="The id of the project to consider", required=True)
+def project(project_id):
+    """Manipulate project"""
+    config.project_id = project_id
+
+
+@project.command()
+def list_images():
+    """List the docker images"""
+    indentation = "  "
+    g = config.gitlab
+    api = g.api
+    project = api.projects.get(config.project_id)
+    for repository in project.repositories.list():
+        print(f"{repository.path}:")
+        for tag in repository.tags.list(as_list=False):
+            print(indent(tag.path, indentation))
 
 
 @gitlab.command()
