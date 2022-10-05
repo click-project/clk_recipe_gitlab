@@ -20,6 +20,7 @@ LOGGER = get_logger(__name__)
 
 
 class GitlabConfig:
+
     def __init__(self, url, private_token):
         self.api = Gitlab(url=url, private_token=private_token)
 
@@ -62,6 +63,7 @@ def walk_group_and_projects(group):
 
 
 class GitlabGroupConfig:
+
     def __init__(self, group_id):
         self.group = config.gitlab.api.groups.get(group_id)
 
@@ -200,3 +202,48 @@ def ipython():
     dict_ = globals()
     dict_.update(locals())
     IPython.start_ipython(argv=[], user_ns=dict_)
+
+
+project_member_choice = [
+    'id', 'username', 'name', 'state', 'avatar_url', 'web_url', 'access_level', 'created_at', 'expires_at',
+    'membership_state'
+]
+project_member_access_levels = {
+    50: "owner",
+    40: "maintainer",
+    30: "developer",
+    20: "reporter",
+    10: "guest",
+}
+
+
+@project.command()
+@table_format(
+    default='key_value', )
+@table_fields(
+    choices=project_member_choice + ["access_level_str"],
+    default=["access_level", "name"],
+)
+@option(
+    "--sort-by",
+    help="Sort by this field",
+    type=click.Choice(project_member_choice),
+    multiple=True,
+    default=(
+        "access_level",
+        "name",
+    ),
+)
+def members(format, fields, sort_by):
+    """List the members"""
+    g = config.gitlab
+    api = g.api
+    project = api.projects.get(config.project_id)
+    with TablePrinter(fields, format) as tp:
+        members = project.members_all.list(as_list=False)
+        if sort_by:
+            members = sorted(members, key=lambda m: [m.asdict().get(s) for s in sort_by])
+        for member in members:
+            data = member.asdict()
+            tp.echo(*([data[key]
+                       for key in project_member_choice] + [project_member_access_levels.get(member.access_level)]))
